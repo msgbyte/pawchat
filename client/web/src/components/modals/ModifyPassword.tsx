@@ -45,6 +45,10 @@ const schema = createMetaFormSchema({
   newPassword: metaFormFieldSchema
     .string()
     .min(6, t('密码不能低于6位'))
+    .matches(/[A-Z]/, '密码必须包含大写字母')  
+    .matches(/[a-z]/, '密码必须包含小写字母')  
+    .matches(/\d/, '密码必须包含数字')  
+    .matches(/[`~!@#$%^&*()_+./,;':"*]/, '密码必须包含符号')  
     .required(t('密码不能为空')),
   newPasswordRepeat: metaFormFieldSchema
     .string()
