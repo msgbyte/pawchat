@@ -10,6 +10,7 @@ interface ImagePickerProps extends PropsWithChildren {
   className?: string;
   imageUrl?: string; // 初始image url, 仅children为空时生效
   aspect?: number;
+  maxSize?: number;
   onChange?: (blobUrl: string) => void;
   disabled?: boolean; // 禁用选择
 }
@@ -43,6 +44,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = React.memo((props) => {
                 <ImageCropperModal
                   imageUrl={reader.result.toString()}
                   aspect={props.aspect}
+                  maxSize={props.maxSize}
                   onConfirm={(croppedImageBlobUrl) => {
                     closeModal(key);
                     updateAvatar(croppedImageBlobUrl);

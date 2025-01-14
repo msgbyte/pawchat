@@ -12,6 +12,7 @@ import { ImagePicker } from './ImagePicker';
 interface ImageUploaderProps extends PropsWithChildren {
   circle?: boolean;
   aspect?: number;
+  maxSize?: number;
   className?: string;
   usage?: UploadFileUsage;
   onUploadSuccess: (fileInfo: UploadFileResult) => void;
@@ -46,6 +47,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = React.memo(
           'rounded-full': props.circle,
         })}
         aspect={aspect}
+        maxSize={props.maxSize}
         disabled={loading}
         onChange={handlePickImage}
       >
@@ -65,7 +67,14 @@ ImageUploader.displayName = 'ImageUploader';
 
 export const AvatarUploader: React.FC<ImageUploaderProps> = React.memo(
   (props) => {
-    return <ImageUploader aspect={1} circle={true} {...props}></ImageUploader>;
+    return (
+      <ImageUploader
+        aspect={1}
+        maxSize={256}
+        circle={true}
+        {...props}
+      ></ImageUploader>
+    );
   }
 );
 AvatarUploader.displayName = 'AvatarUploader';
