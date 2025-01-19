@@ -1,0 +1,20 @@
+{
+  "name": "tailchat-plugin-excalidraw",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "moonrailgun",
+  "description": "Add excalidraw support in Tailchat",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build:web": "ministar buildPlugin all",
+    "build:web:watch": "ministar watchPlugin all"
+  },
+  "devDependencies": {
+    "@types/react": "18.0.20",
+    "mini-star": "*"
+  },
+  "dependencies": {
+    "tailchat-server-sdk": "*"
+  }
+}
