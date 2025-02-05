@@ -11,9 +11,11 @@ import { ModalWrapper } from '../Modal';
 export const ImageCropperModal: React.FC<{
   imageUrl: string;
   aspect?: number;
+  maxSize?: number;
   onConfirm: (croppedImageBlobUrl: string) => void;
 }> = React.memo((props) => {
   const aspect = props.aspect ?? 1;
+  const maxSize = props.maxSize ?? Infinity;
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [area, setArea] = useState<Area>({ width: 0, height: 0, x: 0, y: 0 });
@@ -21,7 +23,10 @@ export const ImageCropperModal: React.FC<{
   const handleConfirm = async () => {
     const blobUrl = await getCroppedImg(
       await createImage(props.imageUrl),
-      area
+      area,
+      0,
+      'newFile.jpeg',
+      maxSize
     );
     props.onConfirm(blobUrl);
   };
@@ -73,48 +78,45 @@ let fileUrlTemp: string | null = null; // 缓存裁剪后的图片url
  * @param crop 裁剪信息
  * @param rotation 旋转角度
  * @param fileName 文件名
+ * @param maxSize 最大尺寸
  * @returns 裁剪后的图片blob url
  */
 function getCroppedImg(
   image: HTMLImageElement,
   crop: Area,
   rotation = 0,
-  fileName = 'newFile.jpeg'
+  fileName = 'newFile.jpeg',
+  maxSize = Infinity
 ): Promise<string> {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
   if (!_isNil(ctx)) {
-    const maxSize = Math.max(image.width, image.height);
-    const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2));
+    // 计算最大尺寸
+    const size = Math.min(Math.max(crop.width, crop.height), maxSize);
 
-    // set each dimensions to double largest dimension to allow for a safe area for the
-    // image to rotate in without being clipped by canvas context
-    canvas.width = safeArea;
-    canvas.height = safeArea;
+    // 计算缩放比例
+    const scale = size / Math.max(crop.width, crop.height);
+
+    canvas.width = scale * crop.width;
+    canvas.height = scale * crop.height;
 
     // translate canvas context to a central location on image to allow rotating around the center.
-    ctx.translate(safeArea / 2, safeArea / 2);
+    ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate(getRadianAngle(rotation));
-    ctx.translate(-safeArea / 2, -safeArea / 2);
+    ctx.translate(-canvas.width / 2, -canvas.height / 2);
 
     // draw rotated image and store data.
     ctx.drawImage(
       image,
-      safeArea / 2 - image.width * 0.5,
-      safeArea / 2 - image.height * 0.5
-    );
-    const data = ctx.getImageData(0, 0, safeArea, safeArea);
-
-    // set canvas width to final desired crop size - this will clear existing context
-    canvas.width = crop.width;
-    canvas.height = crop.height;
-
-    // paste generated rotate image with correct offsets for x,y crop values.
-    ctx.putImageData(
-      data,
-      Math.round(0 - safeArea / 2 + image.width * 0.5 - crop.x),
-      Math.round(0 - safeArea / 2 + image.height * 0.5 - crop.y)
+      0,
+      0,
+      image.width,
+      image.height,
+      -crop.x * scale,
+      -crop.y * scale,
+      image.width * scale,
+      image.height * scale
     );
   }
 
