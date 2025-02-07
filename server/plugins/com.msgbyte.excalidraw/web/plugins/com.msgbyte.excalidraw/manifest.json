@@ -1,0 +1,9 @@
+{
+  "label": "Excalidraw",
+  "name": "com.msgbyte.excalidraw",
+  "url": "{BACKEND}/plugins/com.msgbyte.excalidraw/index.js",
+  "version": "0.0.0",
+  "author": "moonrailgun",
+  "description": "Add excalidraw support in Tailchat",
+  "requireRestart": true
+}

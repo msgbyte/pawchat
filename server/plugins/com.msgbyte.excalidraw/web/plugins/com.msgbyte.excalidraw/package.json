@@ -1,0 +1,18 @@
+{
+  "name": "@plugins/com.msgbyte.excalidraw",
+  "main": "src/index.tsx",
+  "version": "0.0.0",
+  "description": "Add excalidraw support in Tailchat",
+  "private": true,
+  "scripts": {
+    "sync:declaration": "tailchat declaration github"
+  },
+  "dependencies": {
+    "@excalidraw/excalidraw": "^0.15.2"
+  },
+  "devDependencies": {
+    "@types/styled-components": "^5.1.26",
+    "react": "18.2.0",
+    "styled-components": "^5.3.6"
+  }
+}
