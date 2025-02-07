@@ -1,0 +1,52 @@
+version: '3.5'
+services:
+  # Update this to the name of the service you want to work with in your docker-compose.yml file
+  devcontainer:
+    # Uncomment if you want to override the service's Dockerfile to one in the .devcontainer
+    # folder. Note that the path of the Dockerfile and context is relative to the *primary*
+    # docker-compose.yml file (the first in the devcontainer.json "dockerComposeFile"
+    # array). The sample below assumes your primary file is in the root of your project.
+    #
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+
+    volumes:
+      # Update this to wherever you want VS Code to mount the folder of your project
+      - ..:/workspaces:cached
+
+    # Uncomment the next four lines if you will use a ptrace-based debugger like C++, Go, and Rust.
+    # cap_add:
+    #   - SYS_PTRACE
+    # security_opt:
+    #   - seccomp:unconfined
+
+    # Overrides default command so things don't shut down after the process ends.
+    command: /bin/sh -c "while sleep 1000; do :; done"
+
+  # Database
+  mongo:
+    image: mongo:4
+    restart: on-failure
+    volumes:
+      - data:/data/db
+
+  # Data cache and Transporter
+  redis:
+    image: redis:alpine
+    restart: on-failure
+
+  # Persist Storage
+  minio:
+    image: minio/minio
+    restart: on-failure
+    environment:
+      MINIO_ROOT_USER: tailchat
+      MINIO_ROOT_PASSWORD: com.msgbyte.tailchat
+    volumes:
+      - storage:/data
+    command: minio server /data --console-address ":9001"
+
+volumes:
+  data:
+  storage:
