@@ -25,6 +25,7 @@ import {
   db,
 } from 'tailchat-server-sdk';
 import moment from 'moment';
+import type { GroupStruct } from 'tailchat-server-sdk';
 
 interface GroupService
   extends TcService,
@@ -48,6 +49,7 @@ class GroupService extends TcService {
       'getJoinedGroupAndPanelIds',
       this.getJoinedGroupAndPanelIds
     );
+    this.registerAction('getGroupSocketRooms', this.getGroupSocketRooms);
     this.registerAction('getGroupBasicInfo', this.getGroupBasicInfo, {
       params: {
         groupId: 'string',
@@ -236,7 +238,7 @@ class GroupService extends TcService {
    *
    * 订阅即加入socket房间
    */
-  private getSubscribedGroupPanelIds(group: Group): {
+  private getSubscribedGroupPanelIds(group: GroupStruct): {
     textPanelIds: string[];
     subscribeFeaturePanelIds: string[];
   } {
@@ -256,7 +258,7 @@ class GroupService extends TcService {
    * 获取群组所有的文字面板id列表
    * 用于加入房间
    */
-  private getGroupTextPanelIds(group: Group): string[] {
+  private getGroupTextPanelIds(group: GroupStruct): string[] {
     // TODO: 先无视权限, 把所有的信息全部显示
     const textPanelIds = group.panels
       .filter((p) => p.type === GroupPanelType.TEXT)
@@ -270,7 +272,7 @@ class GroupService extends TcService {
    * @param group
    */
   private getGroupPanelIdsWithFeature(
-    group: Group,
+    group: GroupStruct,
     feature: PanelFeature
   ): string[] {
     const featureAllPanelNames = this.getPanelNamesWithFeature(feature);
@@ -303,11 +305,13 @@ class GroupService extends TcService {
       throw new NoPermissionError(t('创建群组功能已被管理员禁用'));
     }
 
-    const group = await this.adapter.model.createGroup({
+    const doc = await this.adapter.model.createGroup({
       name,
       panels,
       owner: userId,
     });
+
+    const group = await this.transformDocuments(ctx, {}, doc);
 
     const { textPanelIds, subscribeFeaturePanelIds } =
       this.getSubscribedGroupPanelIds(group);
@@ -317,10 +321,10 @@ class GroupService extends TcService {
       userId
     );
 
-    return this.transformDocuments(ctx, {}, group);
+    return group;
   }
 
-  async getUserGroups(ctx: TcContext): Promise<Group[]> {
+  async getUserGroups(ctx: TcContext): Promise<GroupStruct[]> {
     const userId = ctx.meta.userId;
 
     const groups = await this.adapter.model.getUserGroups(userId);
@@ -351,6 +355,20 @@ class GroupService extends TcService {
       textPanelIds,
       subscribeFeaturePanelIds,
     };
+  }
+
+  /**
+   * 获取所有订阅的群组面板列表
+   */
+  async getGroupSocketRooms(ctx: TcContext<{ groupId: string }>): Promise<{
+    textPanelIds: string[];
+    subscribeFeaturePanelIds: string[];
+  }> {
+    const groupId = ctx.params.groupId;
+
+    const group = await call(ctx).getGroupInfo(groupId);
+
+    return this.getSubscribedGroupPanelIds(group);
   }
 
   /**
@@ -565,7 +583,7 @@ class GroupService extends TcService {
       )
       .exec();
 
-    const group: Group = await this.transformDocuments(ctx, {}, doc);
+    const group: GroupStruct = await this.transformDocuments(ctx, {}, doc);
 
     this.notifyGroupInfoUpdate(ctx, group); // 推送变更
     this.unicastNotify(ctx, userId, 'add', group);
@@ -1269,13 +1287,15 @@ class GroupService extends TcService {
    */
   private async notifyGroupInfoUpdate(
     ctx: TcContext,
-    group: Group
-  ): Promise<Group> {
+    group: Group | GroupStruct
+  ): Promise<GroupStruct> {
     const groupId = String(group._id);
-    let json = group;
+    let json: GroupStruct;
     if (_.isPlainObject(group) === false) {
       // 当传入的数据为group doc时
       json = await this.transformDocuments(ctx, {}, group);
+    } else {
+      json = group as any;
     }
 
     this.cleanGroupInfoCache(groupId);
