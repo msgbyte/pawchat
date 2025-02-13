@@ -13,6 +13,8 @@ import {
   useAsyncRequest,
   UserBaseInfo,
   useUserId,
+  request,
+  showToasts,
 } from 'tailchat-shared';
 import { UserProfileContainer } from '../../UserProfileContainer';
 import { usePluginUserExtraInfo } from './usePluginUserExtraInfo';
@@ -40,6 +42,15 @@ export const GroupUserPopover: React.FC<{
     const converse = await createDMConverse([userId]);
     navigate(`/main/personal/converse/${converse._id}`);
   }, [navigate]);
+
+  // 一键添加好友
+  const [, handleAddFriend] = useAsyncRequest(async () => {
+    const { data } = await request.post('/api/friend/request/add', {
+      to: userId,
+    });
+    showToasts(t('成功发送好友申请'));
+    return data;
+  }, [userId, request]);
 
   useEffect(() => {
     if (userInfo.avatar) {
@@ -84,6 +95,12 @@ export const GroupUserPopover: React.FC<{
         <div className="pt-2">{pluginUserExtraInfoEl}</div>
 
         <div className="text-right">
+           <Tooltip title={t('添加好友')}>
+              <IconBtn
+                icon="mdi:account-multiple-plus"
+                onClick={handleAddFriend}
+              />
+            </Tooltip>
           {allowSendMessage && (
             <Tooltip title={t('发送消息')}>
               <IconBtn
